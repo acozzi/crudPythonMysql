@@ -78,7 +78,8 @@ def query(tabla):
         showInfo = micursor.fetchall()  # Devuelve un arreglo de tuplas
         
         for i in range(len(showInfo)):
-            tabla.insert('', i, text = showInfo[i][0], values = (showInfo[i][1],showInfo[i][2]))
+            tabla.insert('', i+1, text = i+1, values = (showInfo[i][0],showInfo[i][1],showInfo[i][2]))
+            #tabla.insert('', i, text = showInfo[i][0], values = (showInfo[i][1],showInfo[i][2]))
             #tabla.insert("","end",values=(showInfo[i]))
     except:
         showinfo ('Error', sys.exc_info()[1])

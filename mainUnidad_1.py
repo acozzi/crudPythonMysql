@@ -12,9 +12,9 @@ def callAlta():
 
 def selectTree(event):
     item = verDatos.selection()
-    idInteger.set(verDatos.item(item)['text']) 
-    tituloString.set(verDatos.item(item)['values'][0])   
-    descripcionString.set(verDatos.item(item)['values'][1])
+    idInteger.set(verDatos.item(item)['values'][0]) 
+    tituloString.set(verDatos.item(item)['values'][1])   
+    descripcionString.set(verDatos.item(item)['values'][2])
 
 # Variables Declaracion
 master = Tk()
@@ -43,13 +43,15 @@ tituloTree = Label(master, text="Mostrar Registros Existentes", font="Arial 10")
 tituloTree.grid(row=3, column=0, sticky=N, columnspan=4,pady=10)
 
 verDatos = ttk.Treeview(height=10, columns=3)
-verDatos["columns"] = ("titulo", "descripcion")
+verDatos["columns"] = ("idbase","titulo", "descripcion")
 
 verDatos.column("#0", width=80, minwidth=20, anchor=E)
+verDatos.column("idbase", width=60, minwidth=20, anchor=W)
 verDatos.column("titulo", width=150, minwidth=150, anchor=W)
 verDatos.column("descripcion", width=150, minwidth=150, anchor=W)
 
-verDatos.heading("#0", text="id", anchor=CENTER)
+verDatos.heading("#0", text="index", anchor=CENTER)
+verDatos.heading("idbase", text="id", anchor=CENTER)
 verDatos.heading("titulo", text="Título", anchor=CENTER)
 verDatos.heading("descripcion", text="Descripción", anchor=CENTER)
 
