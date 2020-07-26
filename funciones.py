@@ -3,8 +3,9 @@ from tkinter.messagebox import *
 import tkinter.simpledialog
 import mysql.connector
 from sqlConnect import conectarBase
+from validar import validar
 
-patron = re.compile("^[A-Za-z]+(?:[ _-][A-Za-z]+)*$")  # Admite caracteres alfanumericos y espacios
+baseNombre = "PYTHON"
 
 def crearEtiqueta(widget, texto, fuente, fila, columna, color):
     etiqueta = Label(widget, text=texto, font=fuente)
@@ -21,9 +22,9 @@ def reset(titulo, descripcion):
 
 def altaReg(tabla,titulo, descripcion):
     try:
-        db = conectarBase()
+        db = conectarBase(baseNombre)
         micursor = db.cursor()
-        if patron.match(titulo.get()):
+        if validar(titulo.get()):
             registro = (titulo.get(), descripcion.get())
             sql = "INSERT INTO producto (titulo,descripcion) VALUES (%s,%s)"
             if askyesno ('Confirma','¿Desea confirmar el Alta?'):
@@ -51,17 +52,18 @@ def crearBD():
             user="root",
             password=""
         )
+        baseNombre = tkinter.simpledialog.askstring("Elija el Nombre de la Base", prompt="Nombre")
         micursor = mibase.cursor()
-        baseNombre = " CREATE DATABASE PYTHON_INTERMEDIO"
-        micursor.execute(baseNombre)
-        mensaje = "Se ha creado la base PYTHON_INTERMEDIO"
+        baseSQL = f"CREATE DATABASE {baseNombre}"
+        micursor.execute(baseSQL)
+        mensaje = f"Se ha creado la base {baseNombre}"
         showinfo ('BD Creada', mensaje)
     except:
         showinfo ('Error', sys.exc_info()[1])
     
 def crearTabla():
     try:
-        mibase = conectarBase()
+        mibase = conectarBase(baseNombre)
         micursor= mibase.cursor()
         micursor.execute("CREATE TABLE producto (id INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT, titulo VARCHAR(128) COLLATE utf8_spanish2_ci NOT NULL, descripcion TEXT COLLATE utf8_spanish2_ci NOT NULL)")
         mensaje = "Se ha creado la tabla "
@@ -71,7 +73,7 @@ def crearTabla():
         
 def query(tabla):
     try:
-        mibase = conectarBase()
+        mibase = conectarBase(baseNombre)
         micursor = mibase.cursor()
         selectQuery = "SELECT * FROM producto"
         micursor.execute(selectQuery)
@@ -82,7 +84,10 @@ def query(tabla):
             #tabla.insert('', i, text = showInfo[i][0], values = (showInfo[i][1],showInfo[i][2]))
             #tabla.insert("","end",values=(showInfo[i]))
     except:
-        showinfo ('Error', sys.exc_info()[1])
+        mensaje = str(sys.exc_info()[1])
+        mensajeDB = mensaje + ' Pruebe Crear una base de datos.'
+
+        showinfo ('Error', mensajeDB )
 
 def resetTree(tabla):
     for fila in tabla.get_children():
@@ -90,9 +95,9 @@ def resetTree(tabla):
 
 def updateItem(tabla,id,titulo, descripcion):
     try:
-        db = conectarBase()
+        db = conectarBase(baseNombre)
         micursor = db.cursor()
-        if patron.match(titulo):
+        if validar(titulo):
             registro = (titulo, descripcion, id)
             sql = """UPDATE producto SET titulo = %s, descripcion = %s WHERE producto.id = %s"""
             if askyesno ('Confirma','¿Desea confirmar la modificación?'):
@@ -113,7 +118,7 @@ def updateItem(tabla,id,titulo, descripcion):
 
 def deleteItem(tabla, id, titulo, descripcion):
     try:
-        db = conectarBase()
+        db = conectarBase(baseNombre)
         micursor = db.cursor()
         sql = """DELETE FROM producto WHERE producto.id = %s"""
         registro = (id,)

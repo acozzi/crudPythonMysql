@@ -1,8 +1,8 @@
 import mysql.connector
-def conectarBase():
+def conectarBase(baseNombre):
         return mysql.connector.connect(
                 host="localhost",
                 user="root",
                 password="",
-                database="PYTHON_INTERMEDIO"
+                database=baseNombre
         )
