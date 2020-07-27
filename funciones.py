@@ -4,8 +4,11 @@ import tkinter.simpledialog
 import mysql.connector
 from sqlConnect import conectarBase
 from validar import validar
+import json
 
-baseNombre = "PYTHON"
+buffer = open('nombreBD.json', 'r')
+baseNombre = json.load(buffer)
+buffer.close()
 
 def crearEtiqueta(widget, texto, fuente, fila, columna, color):
     etiqueta = Label(widget, text=texto, font=fuente)
@@ -22,7 +25,7 @@ def reset(titulo, descripcion):
 
 def altaReg(tabla,titulo, descripcion):
     try:
-        db = conectarBase(baseNombre)
+        db = conectarBase(getNameDB())
         micursor = db.cursor()
         if validar(titulo.get()):
             registro = (titulo.get(), descripcion.get())
@@ -45,25 +48,33 @@ def altaReg(tabla,titulo, descripcion):
         showinfo ('Error con la BD', sys.exc_info()[1])
 
 
-def crearBD():
+def crearBD(mostrarString, tituloTree):
     try:
         mibase = mysql.connector.connect(
             host="localhost",
             user="root",
             password=""
         )
-        baseNombre = tkinter.simpledialog.askstring("Elija el Nombre de la Base", prompt="Nombre")
+        baseNombre['nombre'] = tkinter.simpledialog.askstring("Elija el Nombre de la Base", prompt="Nombre")
+        buffer = open('nombreBD.json', 'w')
+        buffer.write(json.dumps(baseNombre))
+        buffer.close()        
         micursor = mibase.cursor()
-        baseSQL = f"CREATE DATABASE {baseNombre}"
+        baseSQL = f"CREATE DATABASE {getNameDB()}"
         micursor.execute(baseSQL)
-        mensaje = f"Se ha creado la base {baseNombre}"
-        showinfo ('BD Creada', mensaje)
+        mensaje = f"Se ha creado la base {getNameDB()}"
+        showinfo('BD Creada', mensaje)
+        mostrarString.set('Mostrando Registros Existentes en ' + getNameDB())
+        tituloTree.configure(text=mostrarString.get())
+
+        if askyesno('Tabla Inexistente', '¿Desea crear una tabla?'):
+            crearTabla()
     except:
         showinfo ('Error', sys.exc_info()[1])
     
 def crearTabla():
     try:
-        mibase = conectarBase(baseNombre)
+        mibase = conectarBase(getNameDB())
         micursor= mibase.cursor()
         micursor.execute("CREATE TABLE producto (id INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT, titulo VARCHAR(128) COLLATE utf8_spanish2_ci NOT NULL, descripcion TEXT COLLATE utf8_spanish2_ci NOT NULL)")
         mensaje = "Se ha creado la tabla "
@@ -73,7 +84,7 @@ def crearTabla():
         
 def query(tabla):
     try:
-        mibase = conectarBase(baseNombre)
+        mibase = conectarBase(getNameDB())
         micursor = mibase.cursor()
         selectQuery = "SELECT * FROM producto"
         micursor.execute(selectQuery)
@@ -86,7 +97,6 @@ def query(tabla):
     except:
         mensaje = str(sys.exc_info()[1])
         mensajeDB = mensaje + ' Pruebe Crear una base de datos.'
-
         showinfo ('Error', mensajeDB )
 
 def resetTree(tabla):
@@ -95,7 +105,7 @@ def resetTree(tabla):
 
 def updateItem(tabla,id,titulo, descripcion):
     try:
-        db = conectarBase(baseNombre)
+        db = conectarBase(getNameDB())
         micursor = db.cursor()
         if validar(titulo):
             registro = (titulo, descripcion, id)
@@ -118,7 +128,7 @@ def updateItem(tabla,id,titulo, descripcion):
 
 def deleteItem(tabla, id, titulo, descripcion):
     try:
-        db = conectarBase(baseNombre)
+        db = conectarBase(getNameDB())
         micursor = db.cursor()
         sql = """DELETE FROM producto WHERE producto.id = %s"""
         registro = (id,)
@@ -134,4 +144,12 @@ def deleteItem(tabla, id, titulo, descripcion):
                 showinfo ('Eliminación Rechazada', sys.exc_info()[1])
 
     except:
-        showinfo ('Error con la BD', sys.exc_info()[1])
+        showinfo('Error con la BD', sys.exc_info()[1])
+def getNameDB():
+    try:
+        return baseNombre['nombre']
+    except:
+        buffer = open('nombreBD.json', 'r')
+        baseNombre = json.load(buffer)
+        buffer.close()
+        return baseNombre['nombre']

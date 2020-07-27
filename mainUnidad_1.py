@@ -5,6 +5,7 @@ import tkinter.simpledialog
 import funciones as f
 import mysql.connector
 from tkinter import ttk
+import json
 
 # Functions
 def callAlta():
@@ -21,6 +22,7 @@ master = Tk()
 idInteger = IntVar()
 tituloString = StringVar()
 descripcionString = StringVar()
+mostrarString = StringVar()
 
 # Configuro el Widget
 master.resizable(0, 0)
@@ -39,7 +41,9 @@ tituloEntry = f.crearEntrada(master, tituloString, 30, 1, 1)
 descripcionEntry = f.crearEntrada(master, descripcionString, 30, 2, 1)
 
 # TreeView Crear y configurar el objeto
-tituloTree = Label(master, text="Mostrar Registros Existentes", font="Arial 10")
+
+mostrarString.set('Mostrando Registros Existentes en ' + f.getNameDB())
+tituloTree = Label(master, text=mostrarString.get(), font="Arial 10")
 tituloTree.grid(row=3, column=0, sticky=N, columnspan=4,pady=10)
 
 verDatos = ttk.Treeview(height=10, columns=3)
@@ -71,7 +75,7 @@ alta.grid(row=6, column=0, pady=15)
 crearTabla = Button(master,text="Crear Tabla", font="Arial 10",command=f.crearTabla, width="8")
 crearTabla.grid(row=6, column=1)
 
-crearBD = Button(master,text="Crear BD", font="Arial 10",command=f.crearBD, width="8")
+crearBD = Button(master,text="Crear BD", font="Arial 10",command= lambda: f.crearBD(mostrarString, tituloTree), width="8")
 crearBD.grid(row=6, column=2)
 
 # Mostrar la tabla al inicio
