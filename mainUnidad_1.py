@@ -6,7 +6,9 @@ import funciones as f
 import mysql.connector
 from tkinter import ttk
 import json
+from clases import Crud
 
+main = Crud()
 # Functions
 def callAlta():
     f.altaReg(verDatos,tituloString, descripcionString)
