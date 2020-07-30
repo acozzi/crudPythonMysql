@@ -1,114 +1,26 @@
 from tkinter import *
 from tkinter import ttk
-import mysql.connector
+from tkinter.messagebox import showerror, showinfo, askyesno
+from tkinter.simpledialog import askstring
 from re import compile
-import sys
-from tkinter.messagebox import *
-import tkinter.simpledialog
-import json
-
-class Database():
-    conector = mysql.connector
-    micursor = None
-    def __init__(self):
-        try:
-            self.conector = mysql.connector.connect(
-                    host="localhost",
-                    user="root",
-                    password="",
-                    database=self.__getDbName()
-            )
-            self.micursor = self.conector.cursor()
-        except:
-            mensaje = f"Error al conectar a la Base de Datos {self.__getDbName()}"
-            showerror("Error MySQL", mensaje)
-            if askyesno("Error MySQL", "¿Desea Crearla?"):
-                createDB(self.__getDbName())
-            
-
-    def getConector(self):
-        return self.conector
-    
-    def __getDbName(self):
-        try:
-            buffer = open('config.json', 'r')
-            baseNombre = json.load(buffer)
-            buffer.close()
-            return baseNombre['nombre']
-        except:
-            showerror("Error al abrir el archivo", error_msg)
-
-    def __setDbName(self, nombre):
-        # Guardo el nombre en el archivo
-        buffer = open('config.json', 'r')
-        baseJson = json.load(buffer)
-        buffer.close()
-        baseJson['nombre'] = nombre
-        buffer = open('config.json', 'w')
-        buffer.write(json.dumps(baseJson))
-        buffer.close()
-
-    def getDbName(self):
-        try:
-            return self.conector.database
-        except:
-            return "Error al obtener el nombre de la base " + str(sys.exc_info()[1])
-
-    def fetchall(self):
-        selectQuery = "SELECT * FROM producto"
-        self.micursor.execute(selectQuery)
-        return self.micursor.fetchall()
-
-    def insertData(self, data): #data = registro: tupla con 2 valores
-        sql = """INSERT INTO producto (titulo,descripcion) VALUES (%s,%s)"""
-        self.micursor.execute(sql, data)
-        self.conector.commit()
-        return self.micursor.rowcount
-    def updateData(self, data): #data = registro: tupla con 3 valores
-        sql = """UPDATE producto SET titulo = %s, descripcion = %s WHERE producto.id = %s"""
-        self.micursor.execute(sql, data)
-        self.conector.commit()
-        return self.micursor.rowcount
-    
-    def deleteData(self, data):
-        sql = """DELETE FROM producto WHERE producto.id = %s"""
-        self.micursor.execute(sql, data)
-        self.conector.commit()
-        return self.micursor.rowcount
-
-    def createTable(self):
-        try:
-            self.micursor.execute("CREATE TABLE producto (id INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT, titulo VARCHAR(128) COLLATE utf8_spanish2_ci NOT NULL, descripcion TEXT COLLATE utf8_spanish2_ci NOT NULL)")
-            return "Se ha creado la tabla"
-        except:
-            return sys.exc_info()[1]
-    def createDB(self, nombre):
-        try:
-            baseSQL = f"CREATE DATABASE {nombre}"
-            self.micursor.execute(baseSQL)
-            use = f"USE {nombre}"
-            self.micursor.execute(use)
-            self.__setDbName(nombre)
-            mensaje = f"Se ha creado la base {self.getDbName()}"
-            return mensaje
-            
-        except:
-            return sys.exc_info()[1]
-
+from sys import exc_info
+from db import Database
 
 class Crud():
     #Variables
     master = Tk()
-
     idInteger = IntVar()
     tituloString = StringVar()
     descripcionString = StringVar()
     mostrarString = StringVar()
-
+    conectorSQL = None
     verDatos = ttk.Treeview()
-    conectorSQL = Database()
-    
+
     def __init__(self):
+        try:
+            self.conectorSQL = Database()
+        except:
+            showerror("Error de Conexión", "Ocurrió un error al intentar conectar al servidor de SQL")
         self.widgetSetup()
         self.iniciarEtiquetas()
         self.iniciarEntradas()
@@ -120,7 +32,9 @@ class Crud():
         self.master.resizable(0, 0)
         self.master.iconbitmap('logo.ico')
         self.master.title("Ejercicio POO")
-
+        self.master.bind("<Return>", lambda e: self.create())
+        self.master.bind("<Delete>", lambda e: self.delete())
+   
     def crearEtiqueta(self, texto, fuente, fila, columna, color):
         etiqueta = Label(self.master, text=texto, font=fuente)
         etiqueta.grid(row=fila, column=columna,sticky=W, padx=10)
@@ -133,7 +47,7 @@ class Crud():
         self.ingrese.configure(bg="#9a32cd")
         self.tituloLabel = self.crearEtiqueta("Título", "Arial 12", 1, 0, "#f2f2f2")
         self.descripcionLabel = self.crearEtiqueta("Descripción", "Arial 12", 2, 0, "#f2f2f2")
-        self.mostrarString.set('Mostrando Registros Existentes en ' + self.conectorSQL.getDbName())
+        self.mostrarString.set('Mostrando Registros Existentes en ' + str(self.conectorSQL.getDbName()))
         self.tituloTree = Label(text=self.mostrarString.get(), font="Arial 10", bg="#d9d9d9")
         self.tituloTree.grid(row=3, column=0, sticky=N, columnspan=4,pady=10)
 
@@ -196,17 +110,18 @@ class Crud():
                 rows = self.conectorSQL.insertData(data)
                 mensaje = "Se cargó " + str(rows) + " registro."
                 showinfo('Resultado', mensaje)
-                self.updateTree()
-                
+                self.updateTree()       
         else:
             error_msg = data[0] + " no es válido."
             showerror("Error en el ingreso", error_msg)
              
     def read(self):
-        datos = self.conectorSQL.fetchall()
-        for i in range(len(datos)):
-            self.verDatos.insert('', i+1, text = i+1, values = (datos[i][0], datos[i][1], datos[i][2]))
-
+        try:
+            datos = self.conectorSQL.fetchall()
+            for i in range(len(datos)):
+                self.verDatos.insert('', i+1, text = i+1, values = (datos[i][0], datos[i][1], datos[i][2]))
+        except:
+            showerror("Error", sys.exc_info()[1])
     def update(self):
         data = (self.tituloString.get(),self.descripcionString.get(),self.idInteger.get())
         if self.validarRE(data[0]):
@@ -232,25 +147,41 @@ class Crud():
         showinfo('Resultado', mensaje)
 
     def crearBD(self):
-        mensaje = "Usted ya se encuentra conectado a la base " + self.conectorSQL.getDbName() + ", ¿Desea Crear una nueva?"
-        if askyesno("Atención", mensaje):
-            nombre = tkinter.simpledialog.askstring("Elija el Nombre de la Base", prompt="Nombre")
-            resultado = self.conectorSQL.createDB(nombre)
-            showinfo('Resultado', resultado)
-            self.crearTabla()
-            print(self.conectorSQL.getDbName())
-            self.mostrarString.set('Mostrando Registros Existentes en ' + self.conectorSQL.getDbName())
-            self.tituloTree.configure(text=self.mostrarString.get())
-            self.updateTree()
+        if self.conectorSQL.conector.is_connected():
+            mensaje = "Usted ya se encuentra conectado a la base " + self.conectorSQL.getDbName() + ", ¿Desea Crear una nueva?"
+            if askyesno("Atención", mensaje):
+                nombre = tkinter.simpledialog.askstring("Elija el Nombre de la Base", prompt="Nombre")
+                resultado = self.conectorSQL.createDB(nombre)
+                showinfo('Resultado', resultado)
+                self.crearTabla()
+                print(self.conectorSQL.getDbName())
+                self.mostrarString.set('Mostrando Registros Existentes en ' + self.conectorSQL.getDbName())
+                self.tituloTree.configure(text=self.mostrarString.get())
+                self.updateTree()
+        else:
+            try:
+                mibase = mysql.connector.connect(
+                    host="localhost",
+                    user="root",
+                    password=""
+                )
+                baseNombre['nombre'] = tkinter.simpledialog.askstring("Elija el Nombre de la Base", prompt="Nombre")
+                buffer = open('nombreBD.json', 'w')
+                buffer.write(json.dumps(baseNombre))
+                buffer.close()        
+                micursor = mibase.cursor()
+                baseSQL = f"CREATE DATABASE {getNameDB()}"
+                micursor.execute(baseSQL)
+                mensaje = f"Se ha creado la base {getNameDB()}"
+                showinfo('BD Creada', mensaje)
+                mostrarString.set('Mostrando Registros Existentes en ' + getNameDB())
+                tituloTree.configure(text=mostrarString.get())
+
+                if askyesno('Tabla Inexistente', '¿Desea crear una tabla?'):
+                    crearTabla()
+            except:
+                showinfo ('Error', sys.exc_info()[1])
             
     def validarRE(self, datoAValidar):
         patron = compile("^[A-Za-z]+(?:[ _-][A-Za-z]+)*$")  
         return patron.match(datoAValidar)
-
-
-
-
-test = Crud()
-
-
-mainloop()
