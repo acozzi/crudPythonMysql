@@ -1,7 +1,7 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter.messagebox import showerror, showinfo, askyesno
-from tkinter.simpledialog import askstring
+import tkinter.simpledialog
 from re import compile
 from sys import exc_info
 from db import Database
@@ -154,7 +154,6 @@ class Crud():
                 resultado = self.conectorSQL.createDB(nombre)
                 showinfo('Resultado', resultado)
                 self.crearTabla()
-                print(self.conectorSQL.getDbName())
                 self.mostrarString.set('Mostrando Registros Existentes en ' + self.conectorSQL.getDbName())
                 self.tituloTree.configure(text=self.mostrarString.get())
                 self.updateTree()
@@ -180,8 +179,7 @@ class Crud():
                 if askyesno('Tabla Inexistente', '¿Desea crear una tabla?'):
                     crearTabla()
             except:
-                showinfo ('Error', sys.exc_info()[1])
-            
+                showinfo ('Error', sys.exc_info()[1])          
     def validarRE(self, datoAValidar):
         patron = compile("^[A-Za-z]+(?:[ _-][A-Za-z]+)*$")  
         return patron.match(datoAValidar)
