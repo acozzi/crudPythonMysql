@@ -13,14 +13,10 @@ class Crud():
     tituloString = StringVar()
     descripcionString = StringVar()
     mostrarString = StringVar()
-    conectorSQL = None
+    base = Database()
     verDatos = ttk.Treeview()
 
     def __init__(self):
-        try:
-            self.conectorSQL = Database()
-        except:
-            showerror("Error de Conexión", "Ocurrió un error al intentar conectar al servidor de SQL")
         self.widgetSetup()
         self.iniciarEtiquetas()
         self.iniciarEntradas()
@@ -34,30 +30,25 @@ class Crud():
         self.master.title("Ejercicio POO")
         self.master.bind("<Return>", lambda e: self.create())
         self.master.bind("<Delete>", lambda e: self.delete())
-   
     def crearEtiqueta(self, texto, fuente, fila, columna, color):
         etiqueta = Label(self.master, text=texto, font=fuente)
         etiqueta.grid(row=fila, column=columna,sticky=W, padx=10)
         etiqueta.configure(bg=color)
         return etiqueta
-
     def iniciarEtiquetas(self):
         self.ingrese = Label(self.master, text="Ingrese sus datos", font="Arial 12", width=45)
         self.ingrese.grid(row=0, column=0, sticky=N, columnspan=5, pady=10)
         self.ingrese.configure(bg="#9a32cd")
         self.tituloLabel = self.crearEtiqueta("Título", "Arial 12", 1, 0, "#f2f2f2")
         self.descripcionLabel = self.crearEtiqueta("Descripción", "Arial 12", 2, 0, "#f2f2f2")
-        self.mostrarString.set('Mostrando Registros Existentes en ' + str(self.conectorSQL.getDbName()))
+        self.mostrarString.set('Mostrando Registros Existentes en ' + str(self.base.getDbName()))
         self.tituloTree = Label(text=self.mostrarString.get(), font="Arial 10", bg="#d9d9d9")
         self.tituloTree.grid(row=3, column=0, sticky=N, columnspan=4,pady=10)
-
     def crearEntrada(self, master, valueForm, ancho, fila, columna):
         return Entry(self.master, width=ancho, textvariable=valueForm).grid(row=fila, column=columna, pady=10)
-    
     def iniciarEntradas(self):
         tituloEntry = self.crearEntrada(self.master, self.tituloString, 30, 1, 1)
         descripcionEntry = self.crearEntrada(self.master, self.descripcionString, 30, 2, 1)
-
     def iniciarTreeView(self):
         self.verDatos.configure(height=10, columns=3)
         self.verDatos["columns"] = ("idbase","titulo", "descripcion")
@@ -70,8 +61,7 @@ class Crud():
         self.verDatos.heading("titulo", text="Título", anchor=CENTER)
         self.verDatos.heading("descripcion", text="Descripción", anchor=CENTER)
         self.verDatos.grid(column=0, row=4, columnspan=3, rowspan=2, padx=20, pady=15)
-        self.verDatos.bind("<<TreeviewSelect>>", self.selectTree)
-    
+        self.verDatos.bind("<<TreeviewSelect>>", self.selectTree) 
     def iniciarBotones(self):
         alta = Button(self.master, text="Alta", font="Arial 10", command= self.create)
         alta.grid(row=6, column=0, pady=15)
@@ -83,78 +73,71 @@ class Crud():
         crearTabla.grid(row=6, column=1)
         crearBD = Button(self.master,text="Crear BD", font="Arial 10",command= self.crearBD, width="8")
         crearBD.grid(row=6, column=2)
-    
     def reset(self):
         self.descripcionString.set("")
         self.tituloString.set("")
-
     def resetTree(self):
         for fila in self.verDatos.get_children():
-            self.verDatos.delete(fila)
-    
+            self.verDatos.delete(fila)   
     def updateTree(self):
         self.reset()
         self.resetTree() 
         self.read()
-
     def selectTree(self, event):
         item = self.verDatos.selection()
         self.idInteger.set(self.verDatos.item(item)['values'][0]) 
         self.tituloString.set(self.verDatos.item(item)['values'][1])   
         self.descripcionString.set(self.verDatos.item(item)['values'][2])
-        
     def create(self):
         data = (self.tituloString.get(), self.descripcionString.get())
         if self.validarRE(data[0]):
             if askyesno('Confirma', '¿Desea confirmar el Alta?'):
-                rows = self.conectorSQL.insertData(data)
+                rows = self.base.insertData(data)
                 mensaje = "Se cargó " + str(rows) + " registro."
                 showinfo('Resultado', mensaje)
                 self.updateTree()       
         else:
             error_msg = data[0] + " no es válido."
-            showerror("Error en el ingreso", error_msg)
-             
+            showerror("Error en el ingreso", error_msg)        
     def read(self):
         try:
-            datos = self.conectorSQL.fetchall()
+            datos = self.base.readData()
             for i in range(len(datos)):
                 self.verDatos.insert('', i+1, text = i+1, values = (datos[i][0], datos[i][1], datos[i][2]))
         except:
-            showerror("Error", sys.exc_info()[1])
+            showerror("Error", exc_info()[1])
     def update(self):
         data = (self.tituloString.get(),self.descripcionString.get(),self.idInteger.get())
         if self.validarRE(data[0]):
             if askyesno('Confirma', '¿Desea confirmar la modificación?'):
-                rows = self.conectorSQL.updateData(data)
+                rows = self.base.updateData(data)
                 mensaje = "Se actualizó " + str(rows) + " registro."
                 showinfo('Resultado', mensaje)
                 self.updateTree()
         else:
             error_msg = data[0] + " no es válido."
             showerror("Error en el ingreso", error_msg)
-    
     def delete(self):
         data = (self.idInteger.get(),)
         if askyesno('Confirma', '¿Desea eliminar el registro?'):
-            rows = self.conectorSQL.deleteData(data)
+            rows = self.base.deleteData(data)
             mensaje = "Se eliminó " + str(rows) + " registro."
             showinfo('Resultado', mensaje)
-            self.updateTree()
-        
+            self.updateTree()     
     def crearTabla(self):
-        mensaje = self.conectorSQL.createTable()
+        mensaje = self.base.createTable()
         showinfo('Resultado', mensaje)
 
     def crearBD(self):
-        if self.conectorSQL.conector.is_connected():
-            mensaje = "Usted ya se encuentra conectado a la base " + self.conectorSQL.getDbName() + ", ¿Desea Crear una nueva?"
+        if self.base.isConnected():
+            mensaje = "Usted ya se encuentra conectado a la base " + self.base.getDbName() + ", ¿Desea Crear una nueva?"
             if askyesno("Atención", mensaje):
                 nombre = tkinter.simpledialog.askstring("Elija el Nombre de la Base", prompt="Nombre")
-                resultado = self.conectorSQL.createDB(nombre)
+                self.base.setDbName(nombre)
+                resultado = self.base.createDB()
                 showinfo('Resultado', resultado)
                 self.crearTabla()
-                self.mostrarString.set('Mostrando Registros Existentes en ' + self.conectorSQL.getDbName())
+                self.mostrarString.set('Mostrando Registros Existentes en ' + self.base.getDbName())
                 self.tituloTree.configure(text=self.mostrarString.get())
                 self.updateTree()
         else:
@@ -179,7 +162,12 @@ class Crud():
                 if askyesno('Tabla Inexistente', '¿Desea crear una tabla?'):
                     crearTabla()
             except:
-                showinfo ('Error', sys.exc_info()[1])          
+                showinfo ('Error', exc_info()[1])          
     def validarRE(self, datoAValidar):
         patron = compile("^[A-Za-z]+(?:[ _-][A-Za-z]+)*$")  
         return patron.match(datoAValidar)
+
+
+if __name__ == '__main__':
+    poo = Crud()
+    mainloop()
