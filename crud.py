@@ -1,29 +1,27 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter.messagebox import showerror, showinfo, askyesno
+from validar import validarTitulo
 import tkinter.simpledialog
-from re import compile
 from sys import exc_info
 from db import Database
 
-class Crud():
-    #Variables
-    master = Tk()
-    idInteger = IntVar()
-    tituloString = StringVar()
-    descripcionString = StringVar()
-    mostrarString = StringVar()
-    base = Database()
-    verDatos = ttk.Treeview()
 
+class Crud():
     def __init__(self):
+        self.master = Tk()
+        self.idInteger = IntVar()
+        self.tituloString = StringVar()
+        self.descripcionString = StringVar()
+        self.mostrarString = StringVar()
+        self.base = Database()
+        self.verDatos = ttk.Treeview()
         self.widgetSetup()
         self.iniciarEtiquetas()
         self.iniciarEntradas()
         self.iniciarTreeView()
         self.iniciarBotones()
         self.read()
-
     def widgetSetup(self):
         self.master.resizable(0, 0)
         self.master.iconbitmap('logo.ico')
@@ -127,7 +125,6 @@ class Crud():
     def crearTabla(self):
         mensaje = self.base.createTable()
         showinfo('Resultado', mensaje)
-
     def crearBD(self):
         if self.base.isConnected():
             mensaje = "Usted ya se encuentra conectado a la base " + self.base.getDbName() + ", ¿Desea Crear una nueva?"
@@ -164,8 +161,7 @@ class Crud():
             except:
                 showinfo ('Error', exc_info()[1])          
     def validarRE(self, datoAValidar):
-        patron = compile("^[A-Za-z]+(?:[ _-][A-Za-z]+)*$")  
-        return patron.match(datoAValidar)
+        return validarTitulo(datoAValidar)
 
 
 if __name__ == '__main__':

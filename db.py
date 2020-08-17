@@ -4,17 +4,18 @@ from json import dumps, load
 import json
 
 class Database():
-    conector = mysql.connector
-    micursor = None
-    configData = {}
-    # Abrir el archivo de configuración y lo cargo en configData
-    try:
-        buffer = open('config.json', 'r')
-        configData = json.load(buffer)
-        buffer.close()
-    except:
-        print("Error al abrir el archivo config.json", exc_info()[1])
     def __init__(self):
+        self.conector = mysql.connector
+        self.micursor = None
+        self.configData = {}
+        # Abrir el archivo de configuración y lo cargo en configData
+        try:
+            buffer = open('config.json', 'r')
+            self.configData = json.load(buffer)
+            buffer.close()
+        except:
+            print("Error al abrir el archivo config.json", exc_info()[1])
+    
         self.conector = mysql.connector.connect(
             host=self.__getConfigData('host'),
             user=self.__getConfigData('user'),
