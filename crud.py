@@ -28,6 +28,7 @@ class Crud():
         self.crearChecks()
         self.read()
     def widgetSetup(self):
+        """ Configura la ventana base de la aplicacion """
         self.master.resizable(0, 0)
         self.master.iconbitmap('logo.ico')
         self.master.title("Ejercicio POO")
@@ -35,11 +36,13 @@ class Crud():
         self.master.bind("<Return>", lambda e: self.create())
         self.master.bind("<Delete>", lambda e: self.delete())
     def crearEtiqueta(self, texto, fuente, fila, columna, color):
+        """ Metodo para crear las etiquetas principales"""
         etiqueta = Label(self.master, text=texto, font=fuente)
         etiqueta.grid(row=fila, column=columna,sticky=W, padx=10)
         etiqueta.configure(bg=color)
         return etiqueta
     def iniciarEtiquetas(self):
+        """ Inicializa las etiquetas llamando al metodo crearEtiquetas usando los parametros correspondientes"""
         self.ingrese = Label(self.master, text="Ingrese sus datos", font="Arial 12", width=45)
         self.ingrese.grid(row=0, column=0, sticky=N, columnspan=5, pady=10)
         self.ingrese.configure(bg="#9a32cd")
@@ -49,6 +52,7 @@ class Crud():
         self.tituloTree = Label(text=self.mostrarString.get(), font="Arial 10", bg="#d9d9d9")
         self.tituloTree.grid(row=3, column=0, sticky=N, columnspan=4,pady=10)
     def crearChecks(self):
+        """ Crea los cheks del final para elegir temas"""
         check1 = Checkbutton(self.master, text="Tema 1", variable=self.checkStatus1, command= self.updateCheck)
         check1.grid(row=7, column=1)
         check2 = Checkbutton(self.master, text="Tema 2", variable=self.checkStatus2, command= self.updateCheck)
@@ -56,6 +60,7 @@ class Crud():
         check3 = Checkbutton(self.master, text="Tema 3", variable=self.checkStatus3, command= self.updateCheck)
         check3.grid(row=9, column=1)
     def updateCheck(self):
+        """ Actualiza los checks segun el clic que haga el usuario para cambiar el tema"""
         if (self.checkStatus1.get() == True):
             self.master.configure(background='#f5f5f0')
             self.checkStatus2.set(False)
@@ -72,11 +77,14 @@ class Crud():
 
 
     def crearEntrada(self, master, valueForm, ancho, fila, columna):
+        """ Metodo para crear los entrys necesarios"""
         return Entry(self.master, width=ancho, textvariable=valueForm).grid(row=fila, column=columna, pady=10)
     def iniciarEntradas(self):
+        """ Inicializa las entradas principales de carga del formulario"""
         tituloEntry = self.crearEntrada(self.master, self.tituloString, 30, 1, 1)
         descripcionEntry = self.crearEntrada(self.master, self.descripcionString, 30, 2, 1)
     def iniciarTreeView(self):
+        """ Muestra el estado de la base de datos """
         self.verDatos.configure(height=10, columns=3)
         self.verDatos["columns"] = ("idbase","titulo", "descripcion")
         self.verDatos.column("#0", width=80, minwidth=20, anchor=E)
@@ -90,6 +98,7 @@ class Crud():
         self.verDatos.grid(column=0, row=4, columnspan=3, rowspan=2, padx=20, pady=15)
         self.verDatos.bind("<<TreeviewSelect>>", self.selectTree) 
     def iniciarBotones(self):
+        """ Inicializa los botones para ABM tambien crear base y tabla en caso de no existir"""
         alta = Button(self.master, text="Alta", font="Arial 10", command= self.create)
         alta.grid(row=6, column=0, pady=15)
         modificar = Button(self.master,text="Modificar", font="Arial 10",command= self.update, width="8")
@@ -102,21 +111,26 @@ class Crud():
         crearBD.grid(row=6, column=2)
 
     def reset(self):
+        """ Borra el formulario cuando sea necesario para una nueva carga o para evitar repeticiones"""
         self.descripcionString.set("")
         self.tituloString.set("")
     def resetTree(self):
+        """ Borra el arbol completo para actualizar las entradas"""
         for fila in self.verDatos.get_children():
             self.verDatos.delete(fila)   
     def updateTree(self):
+        """ Metodo para actualizar el arbol junto al formulario y carga de nuevo con los datos actualizados"""
         self.reset()
         self.resetTree() 
         self.read()
     def selectTree(self, event):
+        """ Permite elegir un dato de la base para cambiar o borrar"""
         item = self.verDatos.selection()
         self.idInteger.set(self.verDatos.item(item)['values'][0]) 
         self.tituloString.set(self.verDatos.item(item)['values'][1])   
         self.descripcionString.set(self.verDatos.item(item)['values'][2])
     def create(self):
+        """ Crea un registro"""
         data = (self.tituloString.get(), self.descripcionString.get())
         if self.validarRE(data[0]):
             if askyesno('Confirma', '¿Desea confirmar el Alta?'):
@@ -128,6 +142,7 @@ class Crud():
             error_msg = data[0] + " no es válido."
             showerror("Error en el ingreso", error_msg)        
     def read(self):
+        """ Lee los registros existentes en la base abierta y en la tabla productos"""
         try:
             datos = self.base.readData()
             for i in range(len(datos)):
@@ -135,6 +150,7 @@ class Crud():
         except:
             showerror("Error", exc_info()[1])
     def update(self):
+        """ Actualiza un registro"""
         data = (self.tituloString.get(),self.descripcionString.get(),self.idInteger.get())
         if self.validarRE(data[0]):
             if askyesno('Confirma', '¿Desea confirmar la modificación?'):
@@ -146,6 +162,7 @@ class Crud():
             error_msg = data[0] + " no es válido."
             showerror("Error en el ingreso", error_msg)
     def delete(self):
+        """ Borra un registro"""
         data = (self.idInteger.get(),)
         if askyesno('Confirma', '¿Desea eliminar el registro?'):
             rows = self.base.deleteData(data)
@@ -153,9 +170,11 @@ class Crud():
             showinfo('Resultado', mensaje)
             self.updateTree()     
     def crearTabla(self):
+        """ Crea la tabla si no existe"""
         mensaje = self.base.createTable()
         showinfo('Resultado', mensaje)
     def crearBD(self):
+        """ Crea la base si no existe"""
         if self.base.isConnected():
             mensaje = "Usted ya se encuentra conectado a la base " + self.base.getDbName() + ", ¿Desea Crear una nueva?"
             if askyesno("Atención", mensaje):
@@ -191,6 +210,7 @@ class Crud():
             except:
                 showinfo ('Error', exc_info()[1])          
     def validarRE(self, datoAValidar):
+        """ Valida cada registro segun los criterios """
         return validarTitulo(datoAValidar)
 
 
