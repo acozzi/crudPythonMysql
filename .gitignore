@@ -2,3 +2,4 @@
 /__pycache__
 /nombreBD.json
 *.zip
+config.*

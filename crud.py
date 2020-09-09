@@ -11,6 +11,10 @@ class Crud():
     def __init__(self):
         self.master = Tk()
         self.idInteger = IntVar()
+        self.checkStatus1 = BooleanVar()
+        self.checkStatus1.set(True)
+        self.checkStatus2 = BooleanVar()
+        self.checkStatus3 = BooleanVar()
         self.tituloString = StringVar()
         self.descripcionString = StringVar()
         self.mostrarString = StringVar()
@@ -21,11 +25,13 @@ class Crud():
         self.iniciarEntradas()
         self.iniciarTreeView()
         self.iniciarBotones()
+        self.crearChecks()
         self.read()
     def widgetSetup(self):
         self.master.resizable(0, 0)
         self.master.iconbitmap('logo.ico')
         self.master.title("Ejercicio POO")
+
         self.master.bind("<Return>", lambda e: self.create())
         self.master.bind("<Delete>", lambda e: self.delete())
     def crearEtiqueta(self, texto, fuente, fila, columna, color):
@@ -42,6 +48,29 @@ class Crud():
         self.mostrarString.set('Mostrando Registros Existentes en ' + str(self.base.getDbName()))
         self.tituloTree = Label(text=self.mostrarString.get(), font="Arial 10", bg="#d9d9d9")
         self.tituloTree.grid(row=3, column=0, sticky=N, columnspan=4,pady=10)
+    def crearChecks(self):
+        check1 = Checkbutton(self.master, text="Tema 1", variable=self.checkStatus1, command= self.updateCheck)
+        check1.grid(row=7, column=1)
+        check2 = Checkbutton(self.master, text="Tema 2", variable=self.checkStatus2, command= self.updateCheck)
+        check2.grid(row=8, column=1)
+        check3 = Checkbutton(self.master, text="Tema 3", variable=self.checkStatus3, command= self.updateCheck)
+        check3.grid(row=9, column=1)
+    def updateCheck(self):
+        if (self.checkStatus1.get() == True):
+            self.master.configure(background='#f5f5f0')
+            self.checkStatus2.set(False)
+            self.checkStatus3.set(False)
+
+        elif (self.checkStatus2.get() == True):
+            self.master.configure(background='#ff99ff')
+            self.checkStatus3.set(False)
+            self.checkStatus1.set(False)
+        elif (self.checkStatus3.get() == True):
+            self.master.configure(background='#00ff00')
+            self.checkStatus1.set(False)
+            self.checkStatus2.set(False)
+
+
     def crearEntrada(self, master, valueForm, ancho, fila, columna):
         return Entry(self.master, width=ancho, textvariable=valueForm).grid(row=fila, column=columna, pady=10)
     def iniciarEntradas(self):
@@ -71,6 +100,7 @@ class Crud():
         crearTabla.grid(row=6, column=1)
         crearBD = Button(self.master,text="Crear BD", font="Arial 10",command= self.crearBD, width="8")
         crearBD.grid(row=6, column=2)
+
     def reset(self):
         self.descripcionString.set("")
         self.tituloString.set("")

@@ -1,33 +1,29 @@
 import mysql.connector
 from sys import exc_info
 from json import dumps, load
-import json
+import shelve
 
 class Database():
     def __init__(self):
         self.conector = mysql.connector
         self.micursor = None
-        self.configData = {}
+        #self.configData = {}
         # Abrir el archivo de configuración y lo cargo en configData
+        self.configData = shelve.open('config', 'r')
         try:
-            buffer = open('config.json', 'r')
-            self.configData = json.load(buffer)
-            buffer.close()
-        except:
-            print("Error al abrir el archivo config.json", exc_info()[1])
-    
-        self.conector = mysql.connector.connect(
-            host=self.__getConfigData('host'),
-            user=self.__getConfigData('user'),
-            password=self.__getConfigData('password')
-        )
-        self.micursor = self.conector.cursor()
-        try:    
+            self.conector = mysql.connector.connect(
+                host=self.__getConfigData('host'),
+                user=self.__getConfigData('user'),
+                password=self.__getConfigData('password')
+            )
+            self.micursor = self.conector.cursor()
             self.conectarBase(self.__getConfigData('name'))
+            self.configData.close()
+            if not self.isConnected():
+                self.createDB()
+                self.createTable()
         except:
-            self.setDbName(self.__getConfigData('name'))
-            self.createDB()
-            self.createTable()
+            print("Error al conectar a la base. Compruebe que el servidor esta funcionando y que los datos de acceso sean los validos.", exc_info()[1])    
     def __getConfigData(self, key):
         return str(self.configData[key])      
     def conectarBase(self, nombreBase):
@@ -41,10 +37,9 @@ class Database():
         except:
             return ("Error al obtener el nombre de la base " + str(exc_info()[1]))
     def setDbName(self, nombre):
+        self.configData = shelve.open('config','w')
         self.configData['name'] = nombre
-        buffer = open('config.json', 'w')
-        buffer.write(json.dumps(self.configData))
-        buffer.close()
+        self.configData.close()
     def readData(self):
         try:
             selectQuery = "SELECT * FROM producto"
@@ -84,7 +79,9 @@ class Database():
             return exc_info()[1]
     def createDB(self):
         try:
+            self.configData = shelve.open('config', 'r')
             nombre = self.__getConfigData('name')
+            self.configData.close()
             baseSQL = f"CREATE DATABASE {nombre}"
             self.micursor.execute(baseSQL)
             self.conectarBase(nombre)
@@ -95,7 +92,6 @@ class Database():
     def isConnected(self):
         return self.conector.is_connected()
 if __name__ == '__main__':
-    db = Database()
-    print(db.setDbName('nombre'))
-    print(db.createDB())
-    print(db.createTable())
+    #db = Database()
+    pass
+    
